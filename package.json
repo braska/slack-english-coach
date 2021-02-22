@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@slack/bolt": "^3.2.0",
+    "languagedetect": "^2.0.0",
     "serverless-http": "^2.7.0"
   }
 }
