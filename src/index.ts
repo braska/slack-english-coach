@@ -1,5 +1,8 @@
 import { App, ExpressReceiver, GenericMessageEvent } from "@slack/bolt";
 import serverless from "serverless-http";
+import LanguageDetect from "languagedetect";
+
+const lngDetector = new LanguageDetect();
 
 const expressReceiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
@@ -15,10 +18,25 @@ app.message(async ({ message, client }) => {
   if (message.subtype === undefined) {
     const msg = message as GenericMessageEvent;
 
-    await client.chat.postMessage({
-      channel: msg.user,
-      text: msg.text,
-    });
+    const probabilities = lngDetector.detect(msg.text, 10);
+
+    if (probabilities.length > 0) {
+      const engProbability = probabilities.find(([lang]) => lang === 'english')?.[1] ?? 0;
+
+      if (engProbability > 0) {
+        await client.chat.postMessage({
+          channel: msg.user,
+          text: `+${engProbability}`,
+        });
+      } else {
+        const [[,mostLikelyLangProbability]] = probabilities;
+
+        await client.chat.postMessage({
+          channel: msg.user,
+          text: `-${mostLikelyLangProbability}`,
+        });
+      }
+    }
   }
 });
 
