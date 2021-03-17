@@ -16,6 +16,6 @@ services:
   localtunnel:
     build:
       context: ./
-    command: yarn lt --port 8080 -l app --subdomain slack-english-coach --print-requests
+    command: yarn lt --port 8080 -l app --print-requests
     volumes:
       - ".:/usr/src/app"
