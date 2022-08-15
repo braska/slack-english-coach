@@ -1,50 +1,61 @@
-import { App, ExpressReceiver, GenericMessageEvent } from "@slack/bolt";
-import serverless from "serverless-http";
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from "@aws-sdk/client-secrets-manager";
+import { App, AwsLambdaReceiver, GenericMessageEvent } from "@slack/bolt";
 import LanguageDetect from "languagedetect";
+
+const secretsManagerClient = new SecretsManagerClient({});
+const getSecretValueCommand = new GetSecretValueCommand({ SecretId: "Slack" });
+const { SecretString } = await secretsManagerClient.send(getSecretValueCommand);
+const { BotToken, SigningSecret } = JSON.parse(SecretString!);
 
 const lngDetector = new LanguageDetect();
 
-const expressReceiver = new ExpressReceiver({
-  signingSecret: process.env.SLACK_SIGNING_SECRET,
-  processBeforeResponse: true,
+const receiver = new AwsLambdaReceiver({
+  signingSecret: SigningSecret,
 });
 
 const app = new App({
-  token: process.env.SLACK_BOT_TOKEN,
-  receiver: expressReceiver,
+  token: BotToken,
+  receiver: receiver,
 });
 
 app.message(async ({ message, client }) => {
   if (message.subtype === undefined) {
     const msg = message as GenericMessageEvent;
 
-    const probabilities = lngDetector.detect(msg.text, 10);
+    if (!msg.text) {
+      return;
+    }
 
-    if (probabilities.length > 0) {
-      const engProbability = probabilities.find(([lang]) => lang === 'english')?.[1] ?? 0;
+    const plainText = msg.text.replace(/```.*?```/g, "");
 
-      if (engProbability > 0) {
-        await client.chat.postMessage({
-          channel: msg.user,
-          text: `+${engProbability}`,
-        });
-      } else {
-        const [[,mostLikelyLangProbability]] = probabilities;
+    const probabilities = lngDetector.detect(plainText, 10);
 
-        await client.chat.postMessage({
-          channel: msg.user,
-          text: `-${mostLikelyLangProbability}`,
-        });
-      }
+    if (probabilities.length === 0) {
+      return;
+    }
+
+    const engProbability =
+      probabilities.find(([lang]) => lang === "english")?.[1] ?? 0;
+
+    if (engProbability <= 0.1 && probabilities[0]![0] !== "english") {
+      await client.chat.postMessage({
+        channel: msg.user,
+        text: `Hm, it doesn't seem like you're speaking English. I think you are using ${
+          probabilities[0]![0]
+        }${
+          probabilities[1] ? ` or ${probabilities[1]![0]}` : ""
+        }. I know it is difficult to use a language that is not native to you, but keep trying! You will rock it!`,
+      });
     }
   }
 });
 
-if (process.env.NODE_ENV !== "production") {
-  (async () => {
-    await app.start(+process.env.PORT || 8080);
-    console.log("app is running");
-  })();
-}
+type HandlerType = Awaited<ReturnType<typeof receiver.start>>;
 
-module.exports.handler = serverless(expressReceiver.app);
+export const handler: HandlerType = async (event, context, callback) => {
+  const handler = await receiver.start();
+  return handler(event, context, callback);
+};

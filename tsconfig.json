@@ -1,14 +1,4 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "esModuleInterop": true,
-    "target": "es2019",
-    "sourceMap": true,
-    "allowJs": true,
-    "resolveJsonModule": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
-  },
-  "include": ["src"]
+  "extends": "@tsconfig/node16-strictest-esm/tsconfig.json",
+  "include": ["src", "infra"]
 }
