@@ -30,8 +30,12 @@ How to run the app:
    ```bash
    pnpm install
    ```
+1. Bootstrap your AWS account:
+   ```bash
+   pnpm cdk bootstrap aws://{{your_account_id}}/{{your_region}} --profile {{your_profile_name}}
+   ```
 1. Deploy the app to AWS:
    ```bash
-   pnpn cdk watch sandbox --profile {{your_profile_name_goes_here}}
+   pnpn cdk watch sandbox --profile {{your_profile_name}}
    ```
 1. Specify API Gateway URL (from the previous command output) in Slack bot settings page: https://api.slack.com/apps/A01NU6BDDV0/event-subscriptions
