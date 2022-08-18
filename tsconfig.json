@@ -1,4 +1,4 @@
 {
   "extends": "@tsconfig/node16-strictest-esm/tsconfig.json",
-  "include": ["src", "infra"]
+  "include": ["src", "infra", "test_codestar_connection"]
 }
