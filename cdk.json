@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --esm infra/bin/app.ts",
+  "app": "pnpm ts-node --esm infra/bin/app.ts",
   "watch": {
     "include": [
       "infra",
