@@ -70,7 +70,10 @@ export class AppPipelineStack extends cdk.Stack {
       new DeployStage(this, "Staging", { env: props.envs.staging })
     );
     pipeline.addStage(
-      new DeployStage(this, "Production", { env: props.envs.production })
+      new DeployStage(this, "Production", { env: props.envs.production }),
+      {
+        pre: [new pipelines.ManualApprovalStep("PromoteToProduction")],
+      }
     );
   }
 }
